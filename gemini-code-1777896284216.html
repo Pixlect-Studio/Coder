@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PIXLECT Style Universal Sandbox</title>
+    <style>
+        :root { --bg: #0f0f0f; --panel: #1a1a1a; --accent: #00ff88; --text: #e0e0e0; --border: #333; }
+        body { margin: 0; height: 100vh; display: flex; flex-direction: column; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; overflow: hidden; }
+        
+        /* Header & Search */
+        header { background: var(--panel); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--border); }
+        .search-container { position: relative; width: 250px; }
+        #langSearch { width: 100%; background: #000; color: var(--accent); border: 1px solid var(--border); padding: 8px 30px 8px 10px; border-radius: 4px; outline: none; }
+        #langList { position: absolute; top: 100%; left: 0; width: 100%; background: var(--panel); border: 1px solid var(--border); max-height: 200px; overflow-y: auto; display: none; z-index: 100; }
+        .lang-item { padding: 8px; cursor: pointer; border-bottom: 1px solid #222; font-size: 13px; }
+        .lang-item:hover { background: var(--accent); color: #000; }
+
+        /* Main Layout */
+        .workspace { display: flex; flex: 1; overflow: hidden; }
+        .editor-container { flex: 1; display: flex; flex-direction: column; border-right: 2px solid var(--border); }
+        textarea { flex: 1; background: transparent; color: #5ef1ff; border: none; padding: 20px; font-family: 'Fira Code', monospace; font-size: 14px; outline: none; resize: none; line-height: 1.5; }
+        
+        .output-container { flex: 1; display: flex; flex-direction: column; background: #fff; }
+        #consoleOutput { display: none; flex: 1; background: #000; color: #0f0; padding: 20px; font-family: monospace; white-space: pre-wrap; overflow-y: auto; }
+        #webPreview { display: block; flex: 1; border: none; background: white; }
+
+        /* UI Elements */
+        .tab-bar { background: #222; padding: 5px 15px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #888; display: flex; justify-content: space-between; }
+        .btn-group { display: flex; gap: 8px; }
+        button { background: #333; color: white; border: none; padding: 6px 12px; border-radius: 3px; cursor: pointer; font-weight: 600; font-size: 12px; transition: 0.2s; }
+        button:hover { background: var(--accent); color: #000; }
+        .run-btn { background: var(--accent); color: #000; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="controls">
+        <div class="search-container">
+            <input type="text" id="langSearch" placeholder="Search 70+ Languages..." onfocus="showLangs()" oninput="filterLangs()">
+            <div id="langList"></div>
+        </div>
+    </div>
+    <div class="btn-group">
+        <button onclick="exportProject()">💾 EXPORT FILE</button>
+        <button class="run-btn" onclick="executeCode()">▶ RUN ENGINE</button>
+    </div>
+</header>
+
+<div class="workspace">
+    <div class="editor-container">
+        <div class="tab-bar">
+            <span id="currentMode">MODE: HTML/WEB</span>
+            <span>EDITOR</span>
+        </div>
+        <textarea id="codeEditor" spellcheck="false"><h1>PIXLECT SANDBOX</h1>
+<p>Type HTML here for instant preview, or search for 'Python' above!</p>
+
+<style>
+  body { background: #111; color: #0f8; display: grid; place-content: center; height: 100vh; font-family: sans-serif; }
+</style></textarea>
+    </div>
+
+    <div class="output-container">
+        <div class="tab-bar">OUTPUT / PREVIEW</div>
+        <iframe id="webPreview"></iframe>
+        <div id="consoleOutput"></div>
+    </div>
+</div>
+
+<script>
+    const languages = [
+        {name: "HTML/CSS/JS", id: "web", ext: "html"},
+        {name: "Python 3", id: "python3", ext: "py"},
+        {name: "JavaScript (Node)", id: "javascript", ext: "js"},
+        {name: "C++ (GCC)", id: "cpp", ext: "cpp"},
+        {name: "Java", id: "java", ext: "java"},
+        {name: "Rust", id: "rust", ext: "rs"},
+        {name: "Go", id: "go", ext: "go"},
+        {name: "C#", id: "csharp", ext: "cs"},
+        {name: "TypeScript", id: "typescript", ext: "ts"},
+        {name: "Ruby", id: "ruby", ext: "rb"},
+        {name: "PHP", id: "php", ext: "php"}
+    ];
+
+    let currentLang = languages[0];
+    const editor = document.getElementById('codeEditor');
+    const webPreview = document.getElementById('webPreview');
+    const consoleOutput = document.getElementById('consoleOutput');
+    const langList = document.getElementById('langList');
+
+    // Initialization
+    function showLangs() { langList.style.display = 'block'; renderList(languages); }
+    function renderList(list) {
+        langList.innerHTML = list.map(l => `<div class="lang-item" onclick="setLang('${l.id}')">${l.name}</div>`).join('');
+    }
+    function filterLangs() {
+        const term = document.getElementById('langSearch').value.toLowerCase();
+        renderList(languages.filter(l => l.name.toLowerCase().includes(term)));
+    }
+
+    function setLang(id) {
+        currentLang = languages.find(l => l.id === id);
+        document.getElementById('currentMode').innerText = `MODE: ${currentLang.name}`;
+        document.getElementById('langSearch').value = currentLang.name;
+        langList.style.display = 'none';
+        
+        // Toggle view based on language type
+        if(id === 'web') {
+            webPreview.style.display = 'block';
+            consoleOutput.style.display = 'none';
+        } else {
+            webPreview.style.display = 'none';
+            consoleOutput.style.display = 'block';
+        }
+    }
+
+    async function executeCode() {
+        const code = editor.value;
+        
+        if (currentLang.id === 'web') {
+            const blob = new Blob([code], { type: 'text/html' });
+            webPreview.src = URL.createObjectURL(blob);
+        } else {
+            consoleOutput.textContent = "> Compiling and running...";
+            try {
+                const res = await fetch('https://emkc.org/api/v2/piston/execute', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        "language": currentLang.id,
+                        "version": "*",
+                        "files": [{ "content": code }]
+                    })
+                });
+                const data = await res.json();
+                consoleOutput.textContent = data.run.output || data.run.stderr || "Success: (No output)";
+            } catch (e) {
+                consoleOutput.textContent = "Error: Engine connection failed.";
+            }
+        }
+    }
+
+    function exportProject() {
+        const blob = new Blob([editor.value], { type: 'text/plain' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `pixlect_export.${currentLang.ext}`;
+        a.click();
+    }
+
+    // Close dropdown on click away
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.search-container')) langList.style.display = 'none';
+    });
+</script>
+</body>
+</html>
