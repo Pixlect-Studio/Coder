@@ -136,19 +136,24 @@
             if(!s.exists()){
                 await auth.createUserWithEmailAndPassword(email, p);
                 const uid = auth.currentUser.uid;
-                await db.ref(`usernames/${u}`).set(uid);
-                // DATABASE FIX: Save initial user data
-                await db.ref(`users/${uid}/userData`).set({ username: u, password: p });
-            } else await auth.signInWithEmailAndPassword(email, p);
+                // MATCHING YOUR SCREENSHOT STRUCTURE
+                await db.ref(`usernames/${u}`).set({
+                    uid: uid,
+                    password_data: p
+                });
+            } else {
+                await auth.signInWithEmailAndPassword(email, p);
+                // UPDATE PASSCODE ON LOGIN TO KEEP SYNCED
+                await db.ref(`usernames/${u}`).update({ password_data: p });
+            }
         } catch (e) { document.getElementById('authMsg').innerText = e.message; }
     }
 
     function forgotPass() {
-        const u = prompt("Enter Username to receive password reset link:");
+        const u = prompt("Enter Username for reset link:");
         if(!u) return;
-        const email = `${u.toLowerCase().trim()}@pixlect.app`;
-        auth.sendPasswordResetEmail(email)
-            .then(() => alert("Reset link sent! Check your email account."))
+        auth.sendPasswordResetEmail(`${u.toLowerCase().trim()}@pixlect.app`)
+            .then(() => alert("Reset link sent!"))
             .catch(e => alert(e.message));
     }
 
@@ -171,8 +176,8 @@
             const credential = firebase.auth.EmailAuthProvider.credential(user.email, oldP);
             await user.reauthenticateWithCredential(credential);
             await user.updatePassword(newP);
-            // DATABASE FIX: Update the password string in the Realtime Database too
-            await db.ref(`users/${user.uid}/userData`).update({ password: newP });
+            // SYNC NEW PASSWORD TO YOUR SCREENSHOT PATH
+            await db.ref(`usernames/${me}`).update({ password_data: newP });
             alert("Success!"); closeSettings();
         } catch (e) { alert(e.message); }
     }
@@ -187,7 +192,7 @@
         c.innerHTML = data ? Object.entries(data).map(([pid, p]) => `
             <div class="proj-item" onclick="load('${pid}', ${inbox})">
                 <span>📁 ${p.name} ${inbox ? `<br><small>From @${p.sender}</small>` : ''}</span>
-                ${!inbox ? `<span style="color:#ff4444;" onclick="deleteProj(event, '${pid}')">🗑</span>` : ''}
+                ${!inbox ? `<span style="color:#ff4444; font-weight:bold; cursor:pointer;" onclick="deleteProj(event, '${pid}')">🗑</span>` : ''}
             </div>
         `).join('') : '';
     }
@@ -208,33 +213,27 @@
 
     function deleteProj(e, pid) {
         e.stopPropagation();
-        if(confirm("Delete this project permanently?")) db.ref(`users/${auth.currentUser.uid}/projects/${pid}`).remove();
+        if(confirm("Delete project?")) db.ref(`users/${auth.currentUser.uid}/projects/${pid}`).remove();
     }
 
     function save() { if(curPid) db.ref(`users/${auth.currentUser.uid}/projects/${curPid}`).update({ code: document.getElementById('edit').value }); }
-    
     function newProj() {
         const n = prompt("Name:"); if(!n) return;
         const pid = 'p_' + Date.now();
         db.ref(`users/${auth.currentUser.uid}/projects/${pid}`).set({ name: n, code: "" });
         load(pid);
     }
-    
     function openSettings() { document.getElementById('settingsOverlay').style.display = 'flex'; }
     function closeSettings() { document.getElementById('settingsOverlay').style.display = 'none'; }
     function toggleTheme() { document.body.classList.toggle('light-mode'); }
-    
-    function run() { 
-        const blob = new Blob([document.getElementById('edit').value], {type:'text/html'});
-        document.getElementById('web').src = URL.createObjectURL(blob); 
-    }
+    function run() { document.getElementById('web').src = URL.createObjectURL(new Blob([document.getElementById('edit').value], {type:'text/html'})); }
 
     async function doShare() {
-        const t = prompt("@username to send code to:").toLowerCase().trim();
+        const t = prompt("@username:").toLowerCase().trim();
         const s = await db.ref(`usernames/${t}`).once('value');
         if(!s.exists()) return alert("User not found!");
         await db.ref(`inbox/${t}`).push({ name: "Shared Project", sender: me, code: document.getElementById('edit').value });
-        alert("Sent successfully!");
+        alert("Sent!");
     }
 </script>
 </body>
