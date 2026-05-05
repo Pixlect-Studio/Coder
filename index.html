@@ -2,153 +2,216 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>PIXLECT Universal Studio</title>
+    <title>PIXLECT Coder </title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
     <style>
-        :root {
-            --bg: #ffffff; --panel: #f5f5f5; --text: #1a1a1a;
-            --border: #dddddd; --accent: #007acc; --editor-bg: #ffffff; --code-text: #23515c;
+        :root { 
+            --bg: #080808; --panel: #121212; --accent: #00ff88; --text: #e0e0e0; --border: #222; 
+            --editor-bg: #000; --input-bg: #0a0a0a;
         }
-        [data-theme="dark"] {
-            --bg: #0f0f0f; --panel: #1a1a1a; --text: #e0e0e0;
-            --border: #333333; --accent: #00ff88; --editor-bg: #0f0f0f; --code-text: #5ef1ff;
+        body.light-mode {
+            --bg: #f4f4f4; --panel: #ffffff; --accent: #008f4c; --text: #1a1a1a; --border: #ccc;
+            --editor-bg: #fff; --input-bg: #f0f0f0;
         }
-        body { 
-            margin: 0; height: 100vh; display: flex; flex-direction: column; 
-            background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; 
-        }
-        header { 
-            background: var(--panel); padding: 10px 20px; display: flex; 
-            align-items: center; justify-content: space-between; border-bottom: 2px solid var(--border); 
-        }
-        .search-container { position: relative; width: 280px; }
-        #langSearch { 
-            width: 100%; background: var(--bg); color: var(--text); 
-            border: 1px solid var(--border); padding: 8px 12px; border-radius: 4px; outline: none; 
-        }
-        #langList { 
-            position: absolute; top: 100%; left: 0; width: 100%; 
-            background: var(--panel); border: 1px solid var(--border); 
-            max-height: 300px; overflow-y: auto; display: none; z-index: 100; 
-        }
-        .lang-item { padding: 10px; cursor: pointer; border-bottom: 1px solid var(--border); font-size: 13px; }
-        .lang-item:hover { background: var(--accent); color: #000; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; transition: background 0.2s; }
+        body { margin: 0; height: 100vh; display: flex; flex-direction: column; background: var(--bg); color: var(--text); overflow: hidden; }
+        
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.96); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .flex { display: flex; }
+        .card { background: var(--panel); padding: 30px; border-radius: 15px; border: 2px solid var(--accent); width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto; box-shadow: 0 0 30px rgba(0,255,136,0.2); }
+        
+        header { background: var(--panel); padding: 0 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); height: 60px; }
         .workspace { display: flex; flex: 1; overflow: hidden; }
-        .editor-container { flex: 1; display: flex; flex-direction: column; border-right: 2px solid var(--border); }
-        textarea { 
-            flex: 1; background: var(--editor-bg); color: var(--code-text); 
-            border: none; padding: 20px; font-family: 'Fira Code', monospace; 
-            font-size: 14px; outline: none; resize: none; 
-        }
-        .output-container { flex: 1; display: flex; flex-direction: column; background: #fff; }
-        #consoleOutput { display: none; flex: 1; background: #000; color: #0f0; padding: 20px; font-family: monospace; white-space: pre-wrap; overflow-y: auto; }
-        #webPreview { display: block; flex: 1; border: none; background: white; }
-        .btn-group { display: flex; gap: 8px; }
-        button { background: var(--panel); color: var(--text); border: 1px solid var(--border); padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: 600; }
-        button:hover { border-color: var(--accent); color: var(--accent); }
-        .run-btn { background: var(--accent) !important; color: #000 !important; border: none; }
-        .theme-toggle { font-size: 20px; background: none; border: none; cursor: pointer; padding: 0 10px; }
+        .sidebar { width: 260px; background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+        
+        input { width: 100%; padding: 14px; margin-bottom: 12px; background: var(--input-bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; outline: none; font-size: 16px; }
+        .btn { padding: 12px 15px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: bold; border: none; margin-bottom: 10px; width: 100%; display: block; text-align: center; text-decoration: none; }
+        .btn-accent { background: var(--accent); color: #000; }
+        .btn-dark { background: #333; color: #fff; }
+        .btn-danger { background: #661111; color: #ff9999; margin-top: 20px; }
+
+        textarea { flex: 1; background: var(--editor-bg); color: #80f0ff; border: none; padding: 20px; font-family: 'Consolas', monospace; outline: none; resize: none; font-size: 15px; line-height: 1.5; }
+        .preview { width: 45%; border-left: 1px solid var(--border); background: #fff; }
+        
+        .proj-item { padding: 12px; cursor: pointer; border-bottom: 1px solid var(--border); font-size: 13px; }
+        .proj-item:hover { background: rgba(0,255,136,0.1); }
+        
+        .forgot-link { color: #ff4444; font-size: 14px; cursor: pointer; text-decoration: underline; display: block; text-align: center; margin: 15px 0; font-weight: 900; }
     </style>
 </head>
-<body data-theme="dark">
+<body>
+
+<div id="authOverlay" class="overlay flex">
+    <div class="card">
+        <h1 style="color:var(--accent); text-align:center; margin:0 0 10px 0;">PIXLECT LOGIN</h1>
+        <input type="text" id="uIn" placeholder="Username">
+        <input type="password" id="pIn" placeholder="Password">
+        <button class="btn btn-accent" onclick="handleAuth()">LOGIN / REGISTER</button>
+        <div class="forgot-link" onclick="forgotPass()">CAN'T LOGIN? FORGOT PASSWORD</div>
+        <p id="authMsg" style="color:#ff4444; font-size:12px; text-align:center; margin-top:10px; font-weight:bold;"></p>
+    </div>
+</div>
+
+<div id="settingsOverlay" class="overlay">
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+            <h2 style="margin:0; color:var(--accent);">Settings</h2>
+            <span onclick="closeSettings()" style="cursor:pointer; font-size: 30px;">&times;</span>
+        </div>
+        <button class="btn btn-dark" onclick="toggleTheme()">🌓 TOGGLE THEME</button>
+        
+        <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:10px; margin-top:20px;">
+            <p style="font-size:12px; font-weight:bold; color:var(--accent); margin-bottom:15px;">CHANGE PASSWORD</p>
+            <input type="password" id="oldPass" placeholder="Current Password">
+            <input type="password" id="newPass" placeholder="New Password">
+            <input type="password" id="confirmPass" placeholder="Confirm New Password">
+            <button class="btn btn-accent" onclick="updatePassword()">SAVE PASSWORD</button>
+            
+            <div class="forgot-link" style="margin-bottom:0;" onclick="forgotPass()">FORGOT CURRENT PASSWORD?</div>
+        </div>
+        
+        <button class="btn btn-danger" onclick="logout()">LOGOUT & CLEAR DEVICE</button>
+    </div>
+</div>
 
 <header>
-    <div class="btn-group">
-        <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
-        <div class="search-container">
-            <input type="text" id="langSearch" placeholder="Search Languages..." onfocus="showLangs()" oninput="filterLangs()">
-            <div id="langList"></div>
-        </div>
+    <div style="display:flex; gap:10px;">
+        <button class="btn btn-accent" style="width:auto; margin:0;" onclick="newProj()">+ NEW PROJECT</button>
     </div>
-    <div class="btn-group">
-        <button onclick="exportProject()">📂 EXPORT CODE</button>
-        <button class="run-btn" onclick="executeCode()">▶ RUN</button>
+    <div style="display:flex; gap:10px; align-items:center;">
+        <span id="displayUser" style="font-weight:bold; color:var(--accent);"></span>
+        <button class="btn btn-dark" style="width:auto; margin:0;" onclick="openSettings()">⚙ SETTINGS</button>
+        <button class="btn btn-dark" style="width:auto; margin:0;" onclick="doShare()">✉ SHARE</button>
+        <button class="btn btn-accent" style="width:auto; margin:0; padding:10px 25px;" onclick="run()">▶ RUN</button>
     </div>
 </header>
 
 <div class="workspace">
-    <div class="editor-container">
-        <textarea id="codeEditor" spellcheck="false"># Delete this and type your own code!
-print("This code will be exported correctly now.")</textarea>
+    <div class="sidebar">
+        <div style="padding:15px; font-size:11px; font-weight:bold; color:var(--accent);">MY PROJECTS</div>
+        <div id="myList" style="flex:1; overflow-y:auto;"></div>
+        <div style="padding:15px; font-size:11px; font-weight:bold; color:var(--accent); border-top:1px solid var(--border);">INBOX</div>
+        <div id="inList" style="flex:1; overflow-y:auto;"></div>
     </div>
-    <div class="output-container">
-        <iframe id="webPreview"></iframe>
-        <div id="consoleOutput"></div>
-    </div>
+    <textarea id="edit" oninput="save()" onkeydown="handleAssist(event)" placeholder="Start typing code..."></textarea>
+    <div class="preview"><iframe id="web" style="width:100%; height:100%; border:none;"></iframe></div>
 </div>
 
 <script>
-    const languages = [
-        {name: "HTML/CSS/JS (Web)", id: "web", ext: "html"},
-        {name: "Python 3", id: "python3", ext: "py"},
-        {name: "Node.js", id: "javascript", ext: "js"},
-        {name: "C++", id: "cpp", ext: "cpp"},
-        {name: "Java", id: "java", ext: "java"},
-        {name: "Rust", id: "rust", ext: "rs"},
-        {name: "Go", id: "go", ext: "go"}
-    ];
+    const firebaseConfig = {
+        apiKey: "AIzaSyCUvgkltok7EvlDgLKbJRnY2g5siEJZuIo",
+        authDomain: "coder-pixlect.firebaseapp.com",
+        databaseURL: "https://coder-pixlect-default-rtdb.firebaseio.com",
+        projectId: "coder-pixlect"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database(), auth = firebase.auth();
+    let me = null, curPid = null;
 
-    let currentLang = languages[1]; // Default to Python
-    const editor = document.getElementById('codeEditor');
-    const langList = document.getElementById('langList');
-
-    function toggleTheme() {
-        document.body.setAttribute('data-theme', document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
-    }
-
-    function showLangs() { langList.style.display = 'block'; renderList(languages); }
-    function renderList(list) {
-        langList.innerHTML = list.map(l => `<div class="lang-item" onclick="setLang('${l.id}')">${l.name}</div>`).join('');
-    }
-    function filterLangs() {
-        const term = document.getElementById('langSearch').value.toLowerCase();
-        renderList(languages.filter(l => l.name.toLowerCase().includes(term)));
-    }
-
-    function setLang(id) {
-        currentLang = languages.find(l => l.id === id);
-        document.getElementById('langSearch').value = currentLang.name;
-        langList.style.display = 'none';
-        const isWeb = id === 'web';
-        document.getElementById('webPreview').style.display = isWeb ? 'block' : 'none';
-        document.getElementById('consoleOutput').style.display = isWeb ? 'none' : 'block';
-    }
-
-    async function executeCode() {
-        const code = editor.value;
-        if (currentLang.id === 'web') {
-            const blob = new Blob([code], { type: 'text/html' });
-            document.getElementById('webPreview').src = URL.createObjectURL(blob);
-        } else {
-            const output = document.getElementById('consoleOutput');
-            output.textContent = "> Executing...";
-            try {
-                const res = await fetch('https://emkc.org/api/v2/piston/execute', {
-                    method: 'POST',
-                    body: JSON.stringify({ "language": currentLang.id, "version": "*", "files": [{ "content": code }] })
-                });
-                const data = await res.json();
-                output.textContent = data.run.output || data.run.stderr || "Done.";
-            } catch (e) { output.textContent = "API Error."; }
+    function handleAssist(e) {
+        const area = e.target;
+        const pairs = { '(': ')', '[': ']', '{': '}', '"': '"', "'": "'", '<': '>' };
+        if (pairs[e.key]) {
+            e.preventDefault();
+            const start = area.selectionStart, end = area.selectionEnd, val = area.value;
+            area.value = val.substring(0, start) + e.key + pairs[e.key] + val.substring(end);
+            area.selectionStart = area.selectionEnd = start + 1;
+        }
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const start = area.selectionStart;
+            area.value = area.value.substring(0, start) + "    " + area.value.substring(area.selectionEnd);
+            area.selectionStart = area.selectionEnd = start + 4;
         }
     }
 
-    // THE FIX: Grabs editor.value (what you typed) specifically
-    function exportProject() {
-        const userCode = document.getElementById('codeEditor').value; 
-        const blob = new Blob([userCode], { type: 'text/plain' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `my_code.${currentLang.ext}`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
+    async function handleAuth() {
+        const u = document.getElementById('uIn').value.trim().toLowerCase(), p = document.getElementById('pIn').value;
+        if(!u || !p) return;
+        const email = `${u}@pixlect.app`;
+        try {
+            const s = await db.ref(`usernames/${u}`).once('value');
+            if(!s.exists()){
+                await auth.createUserWithEmailAndPassword(email, p);
+                await db.ref(`usernames/${u}`).set(auth.currentUser.uid);
+            } else await auth.signInWithEmailAndPassword(email, p);
+        } catch (e) { document.getElementById('authMsg').innerText = e.message; }
     }
 
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.search-container')) langList.style.display = 'none';
+    function forgotPass() {
+        alert("SECURITY: Email your Username to dxb.gamer.2014@gmail.com to verify identity and reset password.");
+        window.location.href = "mailto:dxb.gamer.2014@gmail.com?subject=PIXLECT Password Reset Request&body=Username: ";
+    }
+
+    auth.onAuthStateChanged(user => {
+        if(user) {
+            document.getElementById('authOverlay').style.display = 'none';
+            me = user.email.split('@')[0];
+            document.getElementById('displayUser').innerText = `@${me}`;
+            sync();
+        } else document.getElementById('authOverlay').style.display = 'flex';
     });
+
+    function logout() { auth.signOut().then(() => location.reload()); }
+
+    async function updatePassword() {
+        const user = auth.currentUser;
+        const oldP = document.getElementById('oldPass').value, newP = document.getElementById('newPass').value, confP = document.getElementById('confirmPass').value;
+        if (newP !== confP) return alert("Passwords don't match!");
+        try {
+            const credential = firebase.auth.EmailAuthProvider.credential(user.email, oldP);
+            await user.reauthenticateWithCredential(credential);
+            await user.updatePassword(newP);
+            alert("Success!"); closeSettings();
+        } catch (e) { alert(e.message); }
+    }
+
+    function sync() {
+        db.ref(`users/${auth.currentUser.uid}/projects`).on('value', s => render(s.val(), 'myList'));
+        db.ref(`inbox/${me}`).on('value', s => render(s.val(), 'inList', true));
+    }
+
+    function render(data, id, inbox=false) {
+        const c = document.getElementById(id);
+        c.innerHTML = data ? Object.entries(data).map(([pid, p]) => `
+            <div class="proj-item" onclick="load('${pid}', ${inbox})">📁 ${p.name} ${inbox ? `<br><small>From @${p.sender}</small>` : ''}</div>
+        `).join('') : '';
+    }
+
+    async function load(pid, inbox=false) {
+        const path = inbox ? `inbox/${me}/${pid}` : `users/${auth.currentUser.uid}/projects/${pid}`;
+        const snap = await db.ref(path).once('value');
+        const p = snap.val();
+        if(inbox) {
+            const nid = 'p_' + Date.now();
+            await db.ref(`users/${auth.currentUser.uid}/projects/${nid}`).set({ name: "Imported", code: p.code });
+            await db.ref(`inbox/${me}/${pid}`).remove();
+            curPid = nid;
+        } else curPid = pid;
+        document.getElementById('edit').value = p.code;
+    }
+
+    function save() { if(curPid) db.ref(`users/${auth.currentUser.uid}/projects/${curPid}`).update({ code: document.getElementById('edit').value }); }
+    function newProj() {
+        const n = prompt("Name:"); if(!n) return;
+        const pid = 'p_' + Date.now();
+        db.ref(`users/${auth.currentUser.uid}/projects/${pid}`).set({ name: n, code: "" });
+        load(pid);
+    }
+    function openSettings() { document.getElementById('settingsOverlay').style.display = 'flex'; }
+    function closeSettings() { document.getElementById('settingsOverlay').style.display = 'none'; }
+    function toggleTheme() { document.body.classList.toggle('light-mode'); }
+    function run() { document.getElementById('web').src = URL.createObjectURL(new Blob([document.getElementById('edit').value], {type:'text/html'})); }
+    async function doShare() {
+        const t = prompt("@username:").toLowerCase().trim();
+        const s = await db.ref(`usernames/${t}`).once('value');
+        if(!s.exists()) return alert("Not found!");
+        await db.ref(`inbox/${t}`).push({ name: "Shared", sender: me, code: document.getElementById('edit').value });
+        alert("Sent!");
+    }
 </script>
 </body>
 </html>
