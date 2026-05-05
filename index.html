@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>PIXLECT Coder </title>
+    <title>PIXLECT ULTIMATE | Pro Studio</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -36,7 +36,7 @@
         textarea { flex: 1; background: var(--editor-bg); color: #80f0ff; border: none; padding: 20px; font-family: 'Consolas', monospace; outline: none; resize: none; font-size: 15px; line-height: 1.5; }
         .preview { width: 45%; border-left: 1px solid var(--border); background: #fff; }
         
-        .proj-item { padding: 12px; cursor: pointer; border-bottom: 1px solid var(--border); font-size: 13px; }
+        .proj-item { padding: 12px; cursor: pointer; border-bottom: 1px solid var(--border); font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
         .proj-item:hover { background: rgba(0,255,136,0.1); }
         
         .forgot-link { color: #ff4444; font-size: 14px; cursor: pointer; text-decoration: underline; display: block; text-align: center; margin: 15px 0; font-weight: 900; }
@@ -69,7 +69,6 @@
             <input type="password" id="newPass" placeholder="New Password">
             <input type="password" id="confirmPass" placeholder="Confirm New Password">
             <button class="btn btn-accent" onclick="updatePassword()">SAVE PASSWORD</button>
-            
             <div class="forgot-link" style="margin-bottom:0;" onclick="forgotPass()">FORGOT CURRENT PASSWORD?</div>
         </div>
         
@@ -136,14 +135,21 @@
             const s = await db.ref(`usernames/${u}`).once('value');
             if(!s.exists()){
                 await auth.createUserWithEmailAndPassword(email, p);
-                await db.ref(`usernames/${u}`).set(auth.currentUser.uid);
+                const uid = auth.currentUser.uid;
+                await db.ref(`usernames/${u}`).set(uid);
+                // DATABASE FIX: Save initial user data
+                await db.ref(`users/${uid}/userData`).set({ username: u, password: p });
             } else await auth.signInWithEmailAndPassword(email, p);
         } catch (e) { document.getElementById('authMsg').innerText = e.message; }
     }
 
     function forgotPass() {
-        alert("SECURITY: Email your Username to dxb.gamer.2014@gmail.com to verify identity and reset password.");
-        window.location.href = "mailto:dxb.gamer.2014@gmail.com?subject=PIXLECT Password Reset Request&body=Username: ";
+        const u = prompt("Enter Username to receive password reset link:");
+        if(!u) return;
+        const email = `${u.toLowerCase().trim()}@pixlect.app`;
+        auth.sendPasswordResetEmail(email)
+            .then(() => alert("Reset link sent! Check your email account."))
+            .catch(e => alert(e.message));
     }
 
     auth.onAuthStateChanged(user => {
@@ -165,6 +171,8 @@
             const credential = firebase.auth.EmailAuthProvider.credential(user.email, oldP);
             await user.reauthenticateWithCredential(credential);
             await user.updatePassword(newP);
+            // DATABASE FIX: Update the password string in the Realtime Database too
+            await db.ref(`users/${user.uid}/userData`).update({ password: newP });
             alert("Success!"); closeSettings();
         } catch (e) { alert(e.message); }
     }
@@ -177,7 +185,10 @@
     function render(data, id, inbox=false) {
         const c = document.getElementById(id);
         c.innerHTML = data ? Object.entries(data).map(([pid, p]) => `
-            <div class="proj-item" onclick="load('${pid}', ${inbox})">📁 ${p.name} ${inbox ? `<br><small>From @${p.sender}</small>` : ''}</div>
+            <div class="proj-item" onclick="load('${pid}', ${inbox})">
+                <span>📁 ${p.name} ${inbox ? `<br><small>From @${p.sender}</small>` : ''}</span>
+                ${!inbox ? `<span style="color:#ff4444;" onclick="deleteProj(event, '${pid}')">🗑</span>` : ''}
+            </div>
         `).join('') : '';
     }
 
@@ -187,30 +198,43 @@
         const p = snap.val();
         if(inbox) {
             const nid = 'p_' + Date.now();
-            await db.ref(`users/${auth.currentUser.uid}/projects/${nid}`).set({ name: "Imported", code: p.code });
+            await db.ref(`users/${auth.currentUser.uid}/projects/${nid}`).set({ name: "Imported: " + p.name, code: p.code });
             await db.ref(`inbox/${me}/${pid}`).remove();
             curPid = nid;
         } else curPid = pid;
         document.getElementById('edit').value = p.code;
+        run();
+    }
+
+    function deleteProj(e, pid) {
+        e.stopPropagation();
+        if(confirm("Delete this project permanently?")) db.ref(`users/${auth.currentUser.uid}/projects/${pid}`).remove();
     }
 
     function save() { if(curPid) db.ref(`users/${auth.currentUser.uid}/projects/${curPid}`).update({ code: document.getElementById('edit').value }); }
+    
     function newProj() {
         const n = prompt("Name:"); if(!n) return;
         const pid = 'p_' + Date.now();
         db.ref(`users/${auth.currentUser.uid}/projects/${pid}`).set({ name: n, code: "" });
         load(pid);
     }
+    
     function openSettings() { document.getElementById('settingsOverlay').style.display = 'flex'; }
     function closeSettings() { document.getElementById('settingsOverlay').style.display = 'none'; }
     function toggleTheme() { document.body.classList.toggle('light-mode'); }
-    function run() { document.getElementById('web').src = URL.createObjectURL(new Blob([document.getElementById('edit').value], {type:'text/html'})); }
+    
+    function run() { 
+        const blob = new Blob([document.getElementById('edit').value], {type:'text/html'});
+        document.getElementById('web').src = URL.createObjectURL(blob); 
+    }
+
     async function doShare() {
-        const t = prompt("@username:").toLowerCase().trim();
+        const t = prompt("@username to send code to:").toLowerCase().trim();
         const s = await db.ref(`usernames/${t}`).once('value');
-        if(!s.exists()) return alert("Not found!");
-        await db.ref(`inbox/${t}`).push({ name: "Shared", sender: me, code: document.getElementById('edit').value });
-        alert("Sent!");
+        if(!s.exists()) return alert("User not found!");
+        await db.ref(`inbox/${t}`).push({ name: "Shared Project", sender: me, code: document.getElementById('edit').value });
+        alert("Sent successfully!");
     }
 </script>
 </body>
