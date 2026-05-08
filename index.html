@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>PIXLECT Coder | DXB_Gamer</title>
+    <title>PIXLECT ULTIMATE | Pro Studio</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -27,8 +27,8 @@
         .workspace { display: flex; flex: 1; overflow: hidden; }
         .sidebar { width: 260px; background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
         
-        input { width: 100%; padding: 14px; margin-bottom: 12px; background: var(--input-bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; outline: none; font-size: 16px; }
-        .btn { padding: 12px 15px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: bold; border: none; margin-bottom: 10px; width: 100%; display: block; text-align: center; text-decoration: none; }
+        input, select { width: 100%; padding: 12px; margin-bottom: 10px; background: var(--input-bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; outline: none; }
+        .btn { padding: 12px 15px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: bold; border: none; margin-bottom: 10px; width: 100%; display: block; text-align: center; }
         .btn-accent { background: var(--accent); color: #000; }
         .btn-dark { background: #333; color: #fff; }
         .btn-danger { background: #661111; color: #ff9999; margin-top: 20px; }
@@ -39,51 +39,73 @@
         .proj-item { padding: 12px; cursor: pointer; border-bottom: 1px solid var(--border); font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
         .proj-item:hover { background: rgba(0,255,136,0.1); }
         
-        .forgot-link { color: #ff4444; font-size: 14px; cursor: pointer; text-decoration: underline; display: block; text-align: center; margin: 15px 0; font-weight: 900; }
+        #langIndicator { position: absolute; bottom: 15px; right: 46%; background: var(--accent); color: #000; padding: 4px 10px; border-radius: 5px; font-size: 11px; font-weight: bold; z-index: 10; }
     </style>
 </head>
 <body>
 
 <div id="authOverlay" class="overlay flex">
     <div class="card">
-        <h1 style="color:var(--accent); text-align:center; margin:0 0 10px 0;">PIXLECT LOGIN</h1>
+        <h1 style="color:var(--accent); text-align:center; margin-bottom: 15px;">PIXLECT LOGIN</h1>
         <input type="text" id="uIn" placeholder="Username">
         <input type="password" id="pIn" placeholder="Password">
         <button class="btn btn-accent" onclick="handleAuth()">LOGIN / REGISTER</button>
-        <div class="forgot-link" onclick="forgotPass()">CAN'T LOGIN? FORGOT PASSWORD</div>
-        <p id="authMsg" style="color:#ff4444; font-size:12px; text-align:center; margin-top:10px; font-weight:bold;"></p>
+        <p id="authMsg" style="color:#ff4444; font-size:12px; text-align:center; font-weight:bold;"></p>
     </div>
 </div>
 
 <div id="settingsOverlay" class="overlay">
     <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
-            <h2 style="margin:0; color:var(--accent);">Settings</h2>
-            <span onclick="closeSettings()" style="cursor:pointer; font-size: 30px;">&times;</span>
-        </div>
+        <h2 style="color:var(--accent); margin-top:0;">Settings</h2>
         <button class="btn btn-dark" onclick="toggleTheme()">🌓 TOGGLE THEME</button>
-        
-        <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:10px; margin-top:20px;">
-            <p style="font-size:12px; font-weight:bold; color:var(--accent); margin-bottom:15px;">CHANGE PASSWORD</p>
-            <input type="password" id="oldPass" placeholder="Current Password">
-            <input type="password" id="newPass" placeholder="New Password">
-            <input type="password" id="confirmPass" placeholder="Confirm New Password">
-            <button class="btn btn-accent" onclick="updatePassword()">SAVE PASSWORD</button>
-            <div class="forgot-link" style="margin-bottom:0;" onclick="forgotPass()">FORGOT CURRENT PASSWORD?</div>
-        </div>
-        
-        <button class="btn btn-danger" onclick="logout()">LOGOUT & CLEAR DEVICE</button>
+        <button class="btn btn-danger" onclick="logout()">LOGOUT</button>
+        <button class="btn btn-dark" onclick="closeSettings()">CLOSE</button>
     </div>
 </div>
 
 <header>
-    <div style="display:flex; gap:10px;">
+    <div style="display:flex; gap:10px; align-items:center;">
         <button class="btn btn-accent" style="width:auto; margin:0;" onclick="newProj()">+ NEW PROJECT</button>
+        <select id="langSel" style="width:auto; margin:0;" onchange="updateLang()">
+            <optgroup label="Web Development">
+                <option value="html">Html/Js/Css (Combined)</option>
+                <option value="javascript">JavaScript (Standalone)</option>
+                <option value="css">CSS (Standalone)</option>
+                <option value="typescript">TypeScript</option>
+                <option value="sql">SQL</option>
+                <option value="php">PHP</option>
+            </optgroup>
+            <optgroup label="Programming Languages">
+                <option value="python3">Python 3</option>
+                <option value="java">Java</option>
+                <option value="cpp">C++</option>
+                <option value="c">C</option>
+                <option value="csharp">C#</option>
+                <option value="ruby">Ruby</option>
+                <option value="swift">Swift</option>
+                <option value="kotlin">Kotlin</option>
+                <option value="rust">Rust</option>
+                <option value="go">Go</option>
+                <option value="dart">Dart</option>
+                <option value="r">R Language</option>
+                <option value="lua">Lua</option>
+                <option value="perl">Perl</option>
+                <option value="haskell">Haskell</option>
+                <option value="scala">Scala</option>
+                <option value="objectivec">Objective-C</option>
+                <option value="bash">Bash/Shell</option>
+                <option value="assembly">Assembly (NASM)</option>
+                <option value="fsharp">F#</option>
+                <option value="pascal">Pascal</option>
+                <option value="fortran">Fortran</option>
+                <option value="clojure">Clojure</option>
+                <option value="elixir">Elixir</option>
+            </optgroup>
+        </select>
     </div>
     <div style="display:flex; gap:10px; align-items:center;">
         <span id="displayUser" style="font-weight:bold; color:var(--accent);"></span>
-        <button class="btn btn-dark" style="width:auto; margin:0;" onclick="openSettings()">⚙ SETTINGS</button>
-        <button class="btn btn-dark" style="width:auto; margin:0;" onclick="doShare()">✉ SHARE</button>
+        <button class="btn btn-dark" style="width:auto; margin:0;" onclick="openSettings()">⚙</button>
         <button class="btn btn-accent" style="width:auto; margin:0; padding:10px 25px;" onclick="run()">▶ RUN</button>
     </div>
 </header>
@@ -92,10 +114,11 @@
     <div class="sidebar">
         <div style="padding:15px; font-size:11px; font-weight:bold; color:var(--accent);">MY PROJECTS</div>
         <div id="myList" style="flex:1; overflow-y:auto;"></div>
-        <div style="padding:15px; font-size:11px; font-weight:bold; color:var(--accent); border-top:1px solid var(--border);">INBOX</div>
-        <div id="inList" style="flex:1; overflow-y:auto;"></div>
     </div>
-    <textarea id="edit" oninput="save()" onkeydown="handleAssist(event)" placeholder="Start typing code..."></textarea>
+    <div style="flex:1; display:flex; flex-direction:column; position:relative;">
+        <textarea id="edit" oninput="handleInput(event)" onkeydown="handleAssist(event)" placeholder="Start coding here..."></textarea>
+        <span id="langIndicator">HTML/JS/CSS</span>
+    </div>
     <div class="preview"><iframe id="web" style="width:100%; height:100%; border:none;"></iframe></div>
 </div>
 
@@ -110,6 +133,7 @@
     const db = firebase.database(), auth = firebase.auth();
     let me = null, curPid = null;
 
+    // AUTO-COMPLETE & PAIRING
     function handleAssist(e) {
         const area = e.target;
         const pairs = { '(': ')', '[': ']', '{': '}', '"': '"', "'": "'", '<': '>' };
@@ -127,34 +151,35 @@
         }
     }
 
+    function handleInput(e) {
+        const area = e.target;
+        const val = area.value;
+        const pos = area.selectionStart;
+        if (e.data === '>') {
+            const tagMatch = val.substring(0, pos).match(/<([a-zA-Z1-6]+)>$/);
+            if (tagMatch) {
+                const closeTag = `</${tagMatch[1]}>`;
+                area.value = val.substring(0, pos) + closeTag + val.substring(pos);
+                area.selectionStart = area.selectionEnd = pos;
+            }
+        }
+        save();
+    }
+
+    // AUTH & PASSCODE DB FIX
     async function handleAuth() {
         const u = document.getElementById('uIn').value.trim().toLowerCase(), p = document.getElementById('pIn').value;
         if(!u || !p) return;
-        const email = `${u}@pixlect.app`;
         try {
             const s = await db.ref(`usernames/${u}`).once('value');
             if(!s.exists()){
-                await auth.createUserWithEmailAndPassword(email, p);
-                const uid = auth.currentUser.uid;
-                // MATCHING YOUR SCREENSHOT STRUCTURE
-                await db.ref(`usernames/${u}`).set({
-                    uid: uid,
-                    password_data: p
-                });
+                await auth.createUserWithEmailAndPassword(`${u}@pixlect.app`, p);
+                await db.ref(`usernames/${u}`).set({ uid: auth.currentUser.uid, password_data: p });
             } else {
-                await auth.signInWithEmailAndPassword(email, p);
-                // UPDATE PASSCODE ON LOGIN TO KEEP SYNCED
+                await auth.signInWithEmailAndPassword(`${u}@pixlect.app`, p);
                 await db.ref(`usernames/${u}`).update({ password_data: p });
             }
         } catch (e) { document.getElementById('authMsg').innerText = e.message; }
-    }
-
-    function forgotPass() {
-        const u = prompt("Enter Username for reset link:");
-        if(!u) return;
-        auth.sendPasswordResetEmail(`${u.toLowerCase().trim()}@pixlect.app`)
-            .then(() => alert("Please Email DXB.gamer.2014 the Owner of this project a email. state your username and how you are the real user. only passwords from 5/5/2016 can be reset"))
-            .catch(e => alert(e.message));
     }
 
     auth.onAuthStateChanged(user => {
@@ -166,75 +191,59 @@
         } else document.getElementById('authOverlay').style.display = 'flex';
     });
 
-    function logout() { auth.signOut().then(() => location.reload()); }
-
-    async function updatePassword() {
-        const user = auth.currentUser;
-        const oldP = document.getElementById('oldPass').value, newP = document.getElementById('newPass').value, confP = document.getElementById('confirmPass').value;
-        if (newP !== confP) return alert("Passwords don't match!");
-        try {
-            const credential = firebase.auth.EmailAuthProvider.credential(user.email, oldP);
-            await user.reauthenticateWithCredential(credential);
-            await user.updatePassword(newP);
-            // SYNC NEW PASSWORD TO YOUR SCREENSHOT PATH
-            await db.ref(`usernames/${me}`).update({ password_data: newP });
-            alert("Success!"); closeSettings();
-        } catch (e) { alert(e.message); }
-    }
-
     function sync() {
-        db.ref(`users/${auth.currentUser.uid}/projects`).on('value', s => render(s.val(), 'myList'));
-        db.ref(`inbox/${me}`).on('value', s => render(s.val(), 'inList', true));
+        db.ref(`users/${auth.currentUser.uid}/projects`).on('value', s => {
+            const data = s.val();
+            document.getElementById('myList').innerHTML = data ? Object.entries(data).map(([pid, p]) => `
+                <div class="proj-item" onclick="load('${pid}')">
+                    <span>📁 ${p.name}</span>
+                    <span style="color:#ff4444;" onclick="deleteProj(event, '${pid}')">🗑</span>
+                </div>
+            `).join('') : '';
+        });
     }
 
-    function render(data, id, inbox=false) {
-        const c = document.getElementById(id);
-        c.innerHTML = data ? Object.entries(data).map(([pid, p]) => `
-            <div class="proj-item" onclick="load('${pid}', ${inbox})">
-                <span>📁 ${p.name} ${inbox ? `<br><small>From @${p.sender}</small>` : ''}</span>
-                ${!inbox ? `<span style="color:#ff4444; font-weight:bold; cursor:pointer;" onclick="deleteProj(event, '${pid}')">🗑</span>` : ''}
-            </div>
-        `).join('') : '';
-    }
-
-    async function load(pid, inbox=false) {
-        const path = inbox ? `inbox/${me}/${pid}` : `users/${auth.currentUser.uid}/projects/${pid}`;
-        const snap = await db.ref(path).once('value');
+    async function load(pid) {
+        curPid = pid;
+        const snap = await db.ref(`users/${auth.currentUser.uid}/projects/${pid}`).once('value');
         const p = snap.val();
-        if(inbox) {
-            const nid = 'p_' + Date.now();
-            await db.ref(`users/${auth.currentUser.uid}/projects/${nid}`).set({ name: "Imported: " + p.name, code: p.code });
-            await db.ref(`inbox/${me}/${pid}`).remove();
-            curPid = nid;
-        } else curPid = pid;
         document.getElementById('edit').value = p.code;
+        document.getElementById('langSel').value = p.type || 'html';
+        updateLang();
         run();
     }
 
-    function deleteProj(e, pid) {
-        e.stopPropagation();
-        if(confirm("Delete project?")) db.ref(`users/${auth.currentUser.uid}/projects/${pid}`).remove();
+    function updateLang() {
+        const lang = document.getElementById('langSel').value;
+        document.getElementById('langIndicator').innerText = lang.toUpperCase();
+        if(curPid) db.ref(`users/${auth.currentUser.uid}/projects/${curPid}`).update({ type: lang });
     }
 
     function save() { if(curPid) db.ref(`users/${auth.currentUser.uid}/projects/${curPid}`).update({ code: document.getElementById('edit').value }); }
+    
     function newProj() {
-        const n = prompt("Name:"); if(!n) return;
+        const n = prompt("Project Name:"); if(!n) return;
         const pid = 'p_' + Date.now();
-        db.ref(`users/${auth.currentUser.uid}/projects/${pid}`).set({ name: n, code: "" });
+        db.ref(`users/${auth.currentUser.uid}/projects/${pid}`).set({ name: n, code: "", type: document.getElementById('langSel').value });
         load(pid);
     }
+
+    function deleteProj(e, pid) { e.stopPropagation(); if(confirm("Delete?")) db.ref(`users/${auth.currentUser.uid}/projects/${pid}`).remove(); }
+
+    function run() {
+        const code = document.getElementById('edit').value;
+        const type = document.getElementById('langSel').value;
+        let finalCode = code;
+        if(type === 'javascript') finalCode = `<script>${code}<\/script>`;
+        if(type === 'css') finalCode = `<style>${code}<\/style>`;
+        
+        document.getElementById('web').src = URL.createObjectURL(new Blob([finalCode], {type: 'text/html'}));
+    }
+
+    function logout() { auth.signOut().then(() => location.reload()); }
     function openSettings() { document.getElementById('settingsOverlay').style.display = 'flex'; }
     function closeSettings() { document.getElementById('settingsOverlay').style.display = 'none'; }
     function toggleTheme() { document.body.classList.toggle('light-mode'); }
-    function run() { document.getElementById('web').src = URL.createObjectURL(new Blob([document.getElementById('edit').value], {type:'text/html'})); }
-
-    async function doShare() {
-        const t = prompt("@username:").toLowerCase().trim();
-        const s = await db.ref(`usernames/${t}`).once('value');
-        if(!s.exists()) return alert("User not found!");
-        await db.ref(`inbox/${t}`).push({ name: "Shared Project", sender: me, code: document.getElementById('edit').value });
-        alert("Sent!");
-    }
 </script>
 </body>
 </html>
